@@ -1,20 +1,23 @@
-import { desc } from "drizzle-orm";
+import { count, desc, sql } from "drizzle-orm";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { getDb, schema } from "@/db";
 import type { Entry } from "@/db/schema";
 import { adminConfigured, isAdmin } from "@/lib/auth";
-import { EXPOSURE_OPTIONS, QUESTIONS, SOURCE_OPTIONS, type Flag } from "@/lib/questions";
+import { EXPOSURE_OPTIONS, QUESTIONS, SOURCE_OPTIONS } from "@/lib/questions";
 import { logout } from "./actions";
-import { DeleteButton, StatusSelect } from "./entry-controls";
+import { EntriesTable, type EntryRow } from "./entries-table";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "PACT · Admin", robots: { index: false, follow: false } };
 
-export default function AdminPage() {
+const PAGE_SIZE = 20;
+
+export default function AdminPage({ searchParams }: PageProps<"/admin">) {
   return (
     <Suspense fallback={<p className="p-8 text-sm text-ink/60">Duke ngarkuar…</p>}>
-      <Admin />
+      <Admin searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -26,117 +29,131 @@ const dateFormat = new Intl.DateTimeFormat("sq-AL", {
   year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hour12: false,
 });
 
-const FLAG_STYLE: Record<Flag["level"], string> = {
-  urgent: "bg-coral text-white",
-  exclusion: "bg-coral/15 text-ink",
-  check: "bg-sand text-ink",
-};
-
-async function Admin() {
+async function Admin({ searchParams }: { searchParams: PageProps<"/admin">["searchParams"] }) {
   if (!adminConfigured()) {
     return <p className="p-8 text-sm">Vendosni ADMIN_PASSWORD në .env për të aktivizuar panelin.</p>;
   }
   if (!(await isAdmin())) return <LoginForm />;
 
-  const entries = await getDb().select().from(schema.entries).orderBy(desc(schema.entries.createdAt));
-  const urgent = entries.filter((e) => e.status === "new" && e.flags.some((f) => f.level === "urgent")).length;
+  const db = getDb();
+  const { entries } = schema;
+
+  const [totals] = await db
+    .select({
+      total: count(),
+      fresh: count(sql`case when ${entries.status} = 'new' then 1 end`),
+      urgent: count(
+        sql`case when ${entries.status} = 'new' and ${entries.flags} @> '[{"level":"urgent"}]'::jsonb then 1 end`,
+      ),
+    })
+    .from(entries);
+
+  const pages = Math.max(1, Math.ceil(totals.total / PAGE_SIZE));
+  const requested = Number((await searchParams).page);
+  const page = Number.isInteger(requested) ? Math.min(Math.max(requested, 1), pages) : 1;
+
+  const rows = await db
+    .select()
+    .from(entries)
+    .orderBy(desc(entries.createdAt), desc(entries.id))
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl text-teal-900">Regjistrimet</h1>
-          <p className="mt-1 text-sm text-ink/70">
-            {entries.length} gjithsej · {entries.filter((e) => e.status === "new").length} të reja
-            {urgent > 0 && <span className="font-semibold text-coral"> · {urgent} me përparësi</span>}
-          </p>
+    <div className="min-h-dvh bg-slate-50">
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Regjistrimet</h1>
+            <p className="mt-1 text-sm text-ink/60">
+              {totals.total} gjithsej · {totals.fresh} të reja
+              {totals.urgent > 0 && <span className="font-semibold text-danger"> · {totals.urgent} me përparësi</span>}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Plain link: the route returns a file, not a page. */}
+            <a
+              href="/admin/export"
+              download
+              className="rounded-xl bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-700"
+            >
+              Shkarko Excel
+            </a>
+            <form action={logout}>
+              <button type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-card hover:bg-slate-100">
+                Dil
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Plain link: the route returns a file, not a page. */}
-          <a
-            href="/admin/export"
-            download
-            className="rounded-lg bg-teal-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-700"
-          >
-            Shkarko Excel
-          </a>
-          <form action={logout}>
-            <button type="submit" className="rounded-lg border border-ink/15 bg-white px-3 py-1.5 text-sm hover:bg-sand">
-              Dil
-            </button>
-          </form>
-        </div>
+
+        <p className="mt-4 text-xs leading-relaxed text-ink/50">
+          Shenjat janë vetëm orientuese, të bazuara në përgjigjet e vetë personit. Vendimin e merr ekipi pas bisedës.
+        </p>
+
+        {totals.total === 0 ? (
+          <p className="mt-12 text-center text-sm text-ink/60">Ende nuk ka regjistrime.</p>
+        ) : (
+          <div className="mt-5">
+            <EntriesTable entries={rows.map(toRow)} />
+            {pages > 1 && <Pagination page={page} pages={pages} />}
+          </div>
+        )}
       </div>
-
-      <p className="mt-4 rounded-xl bg-sand px-4 py-3 text-xs leading-relaxed text-ink/70">
-        Shenjat janë vetëm orientuese, të bazuara në përgjigjet e vetë personit. Vendimin e merr ekipi pas bisedës.
-      </p>
-
-      {entries.length === 0 ? (
-        <p className="mt-10 text-center text-sm text-ink/60">Ende nuk ka regjistrime.</p>
-      ) : (
-        <ul className="mt-6 space-y-3">
-          {entries.map((e) => (
-            <EntryCard key={e.id} entry={e} />
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
 
-function EntryCard({ entry }: { entry: Entry }) {
+function Pagination({ page, pages }: { page: number; pages: number }) {
+  const link = "rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-card hover:bg-slate-100";
+  const disabled = "rounded-xl px-4 py-2 text-sm font-medium text-ink/30";
   return (
-    <li className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-semibold">
-            {entry.fullName} <span className="font-normal text-ink/60">· {entry.age} vjeç</span>
-          </p>
-          <a href={`tel:${entry.phone.replace(/[^\d+]/g, "")}`} className="font-medium tabular-nums text-teal-700 hover:underline">
-            {entry.phone}
-          </a>
-          <p className="mt-0.5 text-xs text-ink/50">{dateFormat.format(entry.createdAt)}</p>
-        </div>
-        <StatusSelect id={entry.id} status={entry.status} />
-      </div>
-
-      {entry.flags.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-1.5">
-          {entry.flags.map((f) => (
-            <li key={f.text} className={`rounded-full px-2.5 py-1 text-xs font-medium ${FLAG_STYLE[f.level]}`}>
-              {f.text}
-            </li>
-          ))}
-        </ul>
+    <nav aria-label="Faqet" className="mt-5 flex items-center justify-between">
+      {page > 1 ? (
+        <Link href={`/admin?page=${page - 1}`} className={link}>
+          ← Më të rejat
+        </Link>
+      ) : (
+        <span className={disabled}>← Më të rejat</span>
       )}
-
-      <details className="mt-3">
-        <summary className="cursor-pointer text-sm text-teal-700">Përgjigjet</summary>
-        <dl className="mt-3 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
-          {QUESTIONS.map((q) => (
-            <div key={q.id} className="flex justify-between gap-3 border-b border-ink/5 py-1">
-              <dt className="text-ink/70">{q.short}</dt>
-              <dd className="text-right font-medium">{formatAnswer(entry, q.id)}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-4 flex justify-end">
-          <DeleteButton id={entry.id} />
-        </div>
-      </details>
-    </li>
+      <span className="text-sm tabular-nums text-ink/60">
+        Faqja {page} nga {pages}
+      </span>
+      {page < pages ? (
+        <Link href={`/admin?page=${page + 1}`} className={link}>
+          Më të vjetrat →
+        </Link>
+      ) : (
+        <span className={disabled}>Më të vjetrat →</span>
+      )}
+    </nav>
   );
 }
 
-function formatAnswer(entry: Entry, id: (typeof QUESTIONS)[number]["id"]): string {
+function toRow(entry: Entry): EntryRow {
   const a = entry.answers;
-  if (id === "exposure") {
-    return a.exposure?.map((v) => EXPOSURE_OPTIONS.find((o) => o.value === v)?.label ?? v).join("; ") || "—";
-  }
-  if (id === "source") return SOURCE_OPTIONS.find((o) => o.value === a.source)?.label ?? "—";
-  const v = a[id];
-  return v === "po" ? "Po" : v === "jo" ? "Jo" : "—";
+  return {
+    id: entry.id,
+    fullName: entry.fullName,
+    age: entry.age,
+    phone: entry.phone,
+    createdAt: dateFormat.format(entry.createdAt),
+    status: entry.status,
+    flags: entry.flags,
+    answers: QUESTIONS.map((q) => {
+      let value: string;
+      if (q.id === "exposure") {
+        value = a.exposure?.map((v) => EXPOSURE_OPTIONS.find((o) => o.value === v)?.label ?? v).join("; ") || "—";
+      } else if (q.id === "source") {
+        value = SOURCE_OPTIONS.find((o) => o.value === a.source)?.label ?? "—";
+      } else {
+        const v = a[q.id];
+        value = v === "po" ? "Po" : v === "jo" ? "Jo" : "—";
+      }
+      return { label: q.short, value };
+    }),
+  };
 }

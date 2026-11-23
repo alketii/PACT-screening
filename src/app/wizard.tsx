@@ -18,7 +18,7 @@ interface Contact {
 
 export function Wizard() {
   const [stage, setStage] = useState<Stage>("intro");
-  const [contact, setContact] = useState<Contact>({ fullName: "", age: "", phone: "", consent: false, website: "" });
+  const [contact, setContact] = useState<Contact>({ fullName: "", age: "", phone: "", consent: true, website: "" });
   const [answers, setAnswers] = useState<Answers>({});
   const [index, setIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +98,7 @@ export function Wizard() {
             type="button"
             onClick={back}
             disabled={pending}
-            className="-ml-2 rounded-full p-2 text-teal-700 hover:bg-sand focus-visible:outline-2 focus-visible:outline-teal-600"
+            className="-ml-2 rounded-full p-2 text-ink/60 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-accent-600"
             aria-label="Kthehu prapa"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -107,7 +107,7 @@ export function Wizard() {
           </button>
         )}
         <div
-          className="h-1.5 flex-1 overflow-hidden rounded-full bg-sand"
+          className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"
           role="progressbar"
           aria-valuemin={1}
           aria-valuemax={total}
@@ -115,11 +115,11 @@ export function Wizard() {
           aria-label="Përparimi"
         >
           <div
-            className="h-full rounded-full bg-teal-600 transition-[width] duration-300"
+            className="h-full rounded-full bg-accent-600 transition-[width] duration-300"
             style={{ width: `${(current / total) * 100}%` }}
           />
         </div>
-        <span className="text-xs font-medium tabular-nums text-ink/60">
+        <span className="text-xs font-medium tabular-nums text-ink/50">
           {current}/{total}
         </span>
       </header>
@@ -156,15 +156,15 @@ export function Wizard() {
 
         {stage === "done" && (
           <div className="pt-6 text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-teal-600 text-white">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-accent-600 text-white shadow-lg shadow-accent-600/30">
               <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
                 <path d="m8 15.5 5 5 9.5-11" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <h1 className="mt-6 font-display text-3xl text-teal-900">
+            <h1 className="mt-6 text-3xl font-bold tracking-tight">
               Faleminderit, {contact.fullName.trim().split(/\s+/)[0]}!
             </h1>
-            <p className="mx-auto mt-3 max-w-sm leading-relaxed text-ink/80">
+            <p className="mx-auto mt-3 max-w-sm leading-relaxed text-ink/70">
               Përgjigjet tuaja u dërguan. Ekipi i studimit PACT do t’ju telefonojë së shpejti për hapat e ardhshëm.
             </p>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ink/60">
@@ -179,7 +179,7 @@ export function Wizard() {
         )}
 
         {error && (
-          <p role="alert" className="mt-6 rounded-xl bg-coral/10 px-4 py-3 text-sm text-ink">
+          <p role="alert" className="mt-6 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger text-ink">
             {error}
           </p>
         )}
@@ -190,22 +190,24 @@ export function Wizard() {
 
 function Intro({ onStart }: { onStart: () => void }) {
   return (
-    <div className="min-h-dvh bg-teal-900 text-cream">
-      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-6 pb-6 pt-7">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cream/60">Studimi PACT</p>
-        <p className="mt-2 text-sm text-cream/70">Një studim i përbashkët: {ORGANISATIONS.join(" · ")}</p>
+    <div className="min-h-dvh bg-gradient-to-b from-accent-50 via-white to-white">
+      <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-6 pt-7">
+        <p className="inline-flex items-center gap-2 self-start rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold tracking-wide text-accent-700 shadow-card">
+          <span className="size-2 rounded-full bg-accent-600" />
+          Studimi PACT
+        </p>
 
-        <h1 className="mt-6 font-display text-[2.6rem] leading-[1.08] tracking-tight sm:text-5xl">
+        <h1 className="mt-6 text-[2.25rem] font-bold leading-[1.08] tracking-tight sm:text-5xl">
           Përvojat e vështira lënë gjurmë.
-          <span className="mt-1 block text-coral">Na ndihmoni t’i kuptojmë.</span>
+          <span className="block text-accent-600">Na ndihmoni t’i kuptojmë.</span>
         </h1>
 
-        <p className="mt-6 text-lg leading-relaxed text-cream/85">
+        <p className="mt-4 text-base leading-relaxed text-ink/70">
           Studimi PACT hulumton se si përvojat traumatike ndikojnë në jetën e përditshme. Kërkojmë pjesëmarrës të
           moshës {MIN_AGE}–{MAX_AGE} vjeç.
         </p>
 
-        <ol className="mt-7 space-y-4">
+        <ol className="mt-6 space-y-2.5">
           <IntroPoint n="1" title="2–3 minuta">
             Përgjigjuni disa pyetjeve të shkurtra me po ose jo.
           </IntroPoint>
@@ -217,18 +219,19 @@ function Intro({ onStart }: { onStart: () => void }) {
           </IntroPoint>
         </ol>
 
-        <div className="mt-auto pt-7">
+        <div className="sticky bottom-0 -mx-6 mt-auto bg-gradient-to-t from-white from-80% to-white/0 px-6 pb-5 pt-8">
           <button
             type="button"
             onClick={onStart}
-            className="w-full rounded-full bg-coral px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-black/20 transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cream active:scale-[0.99]"
+            className="w-full rounded-2xl bg-accent-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-accent-600/30 transition hover:bg-accent-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-600 active:scale-[0.99]"
           >
             Fillo
           </button>
-          <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-cream/70">
+          <p className="mt-3 flex items-center justify-center gap-2 text-center text-sm text-ink/60">
             <LockIcon />
             Përgjigjet tuaja janë konfidenciale.
           </p>
+          <p className="mt-1.5 text-center text-xs text-ink/45">{ORGANISATIONS.join(" · ")}</p>
         </div>
       </div>
     </div>
@@ -237,13 +240,13 @@ function Intro({ onStart }: { onStart: () => void }) {
 
 function IntroPoint({ n, title, children }: { n: string; title: string; children: ReactNode }) {
   return (
-    <li className="flex gap-4">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cream/30 font-display text-lg">
+    <li className="flex items-start gap-3.5 rounded-2xl bg-white px-4 py-3.5 shadow-card">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-sm font-bold text-accent-700">
         {n}
       </span>
       <span>
         <span className="block font-semibold">{title}</span>
-        <span className="block text-sm leading-relaxed text-cream/75">{children}</span>
+        <span className="block text-sm leading-relaxed text-ink/65">{children}</span>
       </span>
     </li>
   );
@@ -263,7 +266,7 @@ function PrimaryButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBu
     <button
       type="button"
       {...props}
-      className="w-full rounded-full bg-teal-600 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-teal-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:opacity-50"
+      className="w-full rounded-2xl bg-accent-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-accent-600/30 transition hover:bg-accent-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600 disabled:opacity-40 disabled:shadow-none"
     >
       {children}
     </button>
@@ -271,7 +274,7 @@ function PrimaryButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBu
 }
 
 const inputClass =
-  "mt-1.5 w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-base placeholder:text-ink/35 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20";
+  "mt-2 block w-full rounded-xl bg-slate-100 px-4 py-3.5 text-base placeholder:text-ink/35 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent-600";
 
 function ContactStep({
   contact,
@@ -311,9 +314,9 @@ function ContactStep({
       className="space-y-5"
     >
       <div>
-        <h1 className="font-display text-3xl leading-tight text-teal-900">Si mund t’ju kontaktojmë?</h1>
-        <p className="mt-3 flex gap-2 rounded-xl bg-sand px-4 py-3 text-sm leading-relaxed text-ink/80">
-          <span className="mt-0.5 text-teal-700">
+        <h1 className="text-3xl font-bold leading-tight tracking-tight">Si mund t’ju kontaktojmë?</h1>
+        <p className="mt-3 flex gap-2 rounded-2xl bg-accent-50 px-4 py-3 text-sm leading-relaxed text-ink/75">
+          <span className="mt-0.5 text-accent-700">
             <LockIcon />
           </span>
           Këto të dhëna janë konfidenciale dhe nuk ndahen me askënd jashtë ekipit të studimit. I përdorim vetëm për
@@ -366,7 +369,7 @@ function ContactStep({
       <label className="flex items-start gap-3 text-sm leading-relaxed">
         <input
           type="checkbox"
-          className="mt-0.5 size-5 shrink-0 accent-teal-600"
+          className="mt-0.5 size-5 shrink-0 accent-accent-600"
           checked={contact.consent}
           onChange={(e) => set({ consent: e.target.checked })}
         />
@@ -376,7 +379,7 @@ function ContactStep({
       </label>
 
       {problem && (
-        <p role="alert" className="rounded-xl bg-coral/10 px-4 py-3 text-sm">
+        <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
           {problem}
         </p>
       )}
@@ -402,13 +405,15 @@ function QuestionStep({
   onNext: () => void;
 }) {
   const optionClass = (selected: boolean) =>
-    `w-full rounded-2xl border-2 px-5 py-4 text-left text-base font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:opacity-50 ${
-      selected ? "border-teal-600 bg-teal-600 text-white" : "border-ink/10 bg-white hover:border-teal-600/50"
+    `w-full rounded-2xl px-5 py-4 text-base font-semibold transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600 disabled:opacity-50 ${
+      selected
+        ? "bg-accent-600 text-white shadow-lg shadow-accent-600/30"
+        : "bg-accent-50 text-accent-700 hover:bg-accent-100"
     }`;
 
   return (
     <fieldset disabled={pending} className="space-y-6">
-      <legend className="font-display text-[1.7rem] leading-snug text-teal-900">{question.title}</legend>
+      <legend className="text-[1.65rem] font-bold leading-snug tracking-tight">{question.title}</legend>
       {question.help && <p className="-mt-2 text-sm leading-relaxed text-ink/70">{question.help}</p>}
 
       {question.kind === "yesno" && (
@@ -419,7 +424,7 @@ function QuestionStep({
               type="button"
               aria-pressed={answers[question.id] === v}
               onClick={() => onAnswer({ [question.id]: v }, true)}
-              className={`${optionClass(answers[question.id] === v)} text-center text-lg`}
+              className={`${optionClass(answers[question.id] === v)} py-5 text-center text-xl`}
             >
               {v === "po" ? "Po" : "Jo"}
             </button>
@@ -441,7 +446,7 @@ function QuestionStep({
                     const cur = answers.exposure ?? [];
                     onAnswer({ exposure: selected ? cur.filter((x) => x !== o.value) : [...cur, o.value] }, false);
                   }}
-                  className={optionClass(selected)}
+                  className={`${optionClass(selected)} text-left`}
                 >
                   {o.label}
                 </button>
@@ -463,7 +468,7 @@ function QuestionStep({
                 type="button"
                 aria-pressed={answers.source === o.value}
                 onClick={() => onAnswer({ source: answers.source === o.value ? undefined : o.value }, false)}
-                className={optionClass(answers.source === o.value)}
+                className={`${optionClass(answers.source === o.value)} text-left`}
               >
                 {o.label}
               </button>

@@ -2,9 +2,9 @@ import { SUPPORT_CONTACTS } from "@/config/site";
 
 export function SupportCard() {
   return (
-    <div className="rounded-2xl border border-teal-600/20 bg-white p-5 text-left">
-      <p className="font-display text-xl text-teal-900">Nuk jeni vetëm.</p>
-      <p className="mt-2 text-sm leading-relaxed text-ink/80">
+    <div className="rounded-3xl bg-white p-6 text-left shadow-card">
+      <p className="text-xl font-semibold tracking-tight">Nuk jeni vetëm.</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink/70">
         Faleminderit që na e thatë. Nëse keni mendime për t’i bërë keq vetes, ju lutemi flisni me dikë tani. Ndihma
         ekziston.
       </p>
@@ -13,13 +13,13 @@ export function SupportCard() {
           <li key={c.phone}>
             <a
               href={`tel:${c.phone}`}
-              className="flex items-center justify-between gap-3 rounded-xl bg-sand px-4 py-3 hover:bg-sand/70"
+              className="flex items-center justify-between gap-3 rounded-2xl bg-accent-50 px-4 py-3 transition hover:bg-accent-100"
             >
               <span>
                 <span className="block text-sm font-semibold">{c.name}</span>
-                <span className="block text-xs text-ink/70">{c.detail}</span>
+                <span className="block text-xs text-ink/60">{c.detail}</span>
               </span>
-              <span className="text-lg font-semibold tabular-nums text-teal-700">{c.phone}</span>
+              <span className="text-lg font-semibold tabular-nums text-accent-700">{c.phone}</span>
             </a>
           </li>
         ))}

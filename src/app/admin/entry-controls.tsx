@@ -16,7 +16,7 @@ export function StatusSelect({ id, status }: { id: string; status: EntryStatus }
         const value = e.target.value;
         startTransition(() => setStatus(id, value));
       }}
-      className="rounded-lg border border-ink/15 bg-white px-2 py-1.5 text-sm disabled:opacity-50"
+      className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent-600 disabled:opacity-50"
     >
       {Object.entries(STATUS_LABELS).map(([value, label]) => (
         <option key={value} value={value}>
@@ -27,24 +27,29 @@ export function StatusSelect({ id, status }: { id: string; status: EntryStatus }
   );
 }
 
-export function DeleteButton({ id }: { id: string }) {
+export function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
   if (!confirming) {
     return (
-      <button type="button" onClick={() => setConfirming(true)} className="text-sm text-ink/50 hover:text-coral">
-        Fshi
+      <button type="button" onClick={() => setConfirming(true)} className="text-sm text-ink/50 hover:text-danger">
+        Fshi regjistrimin
       </button>
     );
   }
   return (
-    <span className="flex items-center gap-3 text-sm">
+    <span className="flex items-center gap-4 text-sm">
       <button
         type="button"
         disabled={pending}
-        onClick={() => startTransition(() => deleteEntry(id))}
-        className="font-semibold text-coral disabled:opacity-50"
+        onClick={() =>
+          startTransition(async () => {
+            await deleteEntry(id);
+            onDeleted();
+          })
+        }
+        className="font-semibold text-danger disabled:opacity-50"
       >
         {pending ? "Duke fshirë…" : "Po, fshije përgjithmonë"}
       </button>
